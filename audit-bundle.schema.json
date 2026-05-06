@@ -1,0 +1,355 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api.algovoi.co.uk/schemas/audit-bundle.schema.json",
+  "title": "AlgoVoi Selective-Disclosure Audit Bundle",
+  "description": "Self-contained JSON document emitted by /internal/{audit,screening-hits,compliance-events,negotiation-trace}-bundle. Lets an external auditor verify, OFFLINE, that selected rows are part of AlgoVoi's immutable hash chain. See docs/AUDIT-BUNDLE-VERIFIER.md for the verification recipe and scripts/verify_audit_bundle.py for a reference implementation.",
+
+  "type": "object",
+  "required": [
+    "chain_format_version",
+    "chain_name",
+    "bundle_emitted_at",
+    "selection_criteria",
+    "selection",
+    "rows",
+    "bridging_rows",
+    "bridging",
+    "chain_anchor",
+    "off_vm_anchor",
+    "verification_instructions",
+    "bundle_signature"
+  ],
+  "additionalProperties": false,
+
+  "properties": {
+    "chain_format_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Bundle envelope schema version. Bumped only on breaking changes to the canonical-fields layout or signing/canonicalisation algorithms. Verifiers MUST reject unknown versions fatally rather than risk a false PASS — see _SUPPORTED_CHAIN_FORMAT_VERSIONS in scripts/verify_audit_bundle.py and the 'Bundle format versioning' section in docs/AUDIT-BUNDLE-VERIFIER.md."
+    },
+
+    "chain_name": {
+      "type": "string",
+      "enum": [
+        "audit_log",
+        "screening_hits",
+        "compliance_events",
+        "negotiation_trace_events"
+      ],
+      "description": "Which AlgoVoi hash chain the rows came from. Determines which canonical-fields layout the verifier uses to recompute content_hash."
+    },
+
+    "bundle_emitted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the bundle was generated server-side. Part of the HMAC signature payload — modifying it after signing trips bundle_signature verification."
+    },
+
+    "selection_criteria": {
+      "type": "object",
+      "description": "Echo of the operator's filter parameters when the bundle was generated. Field set differs per chain — see verification recipe.",
+      "additionalProperties": true
+    },
+
+    "selection": {
+      "type": "object",
+      "required": [
+        "row_count",
+        "min_chain_position",
+        "max_chain_position",
+        "truncated",
+        "max_rows_cap"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "row_count":          { "type": "integer", "minimum": 0 },
+        "min_chain_position": { "type": ["integer", "null"], "minimum": 1 },
+        "max_chain_position": { "type": ["integer", "null"], "minimum": 1 },
+        "truncated":          { "type": "boolean" },
+        "max_rows_cap":       { "type": "integer", "minimum": 1 }
+      },
+      "description": "Summary of the rows array. `truncated` is true when the operator's filter would have matched more than max_rows_cap rows; the auditor should request a tighter filter or a sequence of bundles."
+    },
+
+    "rows": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/SelectedRow" },
+      "description": "Selected rows with full canonical-fields payload. The verifier recomputes each row's content_hash from these fields and confirms equality with the stored content_hash."
+    },
+
+    "bridging_rows": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/BridgingRow" },
+      "description": "Hash-only entries between min_chain_position and max_chain_position that are NOT in `rows`. Selective-disclosure: the content of unselected events is never disclosed; only chain links exposed to verify continuity."
+    },
+
+    "bridging": {
+      "type": "object",
+      "required": ["included", "row_count", "truncated"],
+      "additionalProperties": false,
+      "properties": {
+        "included":  { "type": "boolean" },
+        "row_count": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" }
+      },
+      "description": "Bridging-rows summary. When included=false, continuity verification is unavailable for sparse selections. When truncated=true, the bridging set hit its 50,000-row cap."
+    },
+
+    "chain_anchor": {
+      "type": "object",
+      "required": [
+        "chain_name",
+        "genesis_chain_position",
+        "genesis_prev_hash",
+        "current_head"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "chain_name":             { "type": "string" },
+        "genesis_chain_position": { "type": "integer", "const": 1 },
+        "genesis_prev_hash":      { "$ref": "#/$defs/Sha256Hex" },
+        "current_head": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["chain_position", "content_hash"],
+              "additionalProperties": false,
+              "properties": {
+                "chain_position": { "type": "integer", "minimum": 1 },
+                "content_hash":   { "$ref": "#/$defs/Sha256Hex" }
+              }
+            }
+          ]
+        }
+      },
+      "description": "Anchor for the in-DB chain at the moment the bundle was generated. genesis_prev_hash is always 64 zeros. current_head is null only when the chain is empty."
+    },
+
+    "off_vm_anchor": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/OffVmAnchor" }
+      ],
+      "description": "Reference to the most recent off-VM Object-Locked manifest for this chain. null when the chain has not been shipped yet (chain in-DB but no manifest in object storage). When non-null, the verifier can cross-check against the locally-downloaded manifest using --manifest-dir."
+    },
+
+    "verification_instructions": {
+      "type": "string",
+      "description": "Human + machine-readable recipe text. Embedded in every bundle so verification is self-documenting."
+    },
+
+    "bundle_signature": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/BundleSignature" }
+      ],
+      "description": "HMAC-SHA256 over the RFC 8785 canonical JSON of the bundle minus this field, when AUDIT_BUNDLE_SIGNING_KEY is configured server-side. null when signing is not configured. Auditor verifies with the published key for the corresponding key_id."
+    }
+  },
+
+  "allOf": [
+    {
+      "if":   { "properties": { "chain_name": { "const": "audit_log" } } },
+      "then": { "properties": { "rows": { "items": { "$ref": "#/$defs/AuditLogRow" } } } }
+    },
+    {
+      "if":   { "properties": { "chain_name": { "const": "screening_hits" } } },
+      "then": { "properties": { "rows": { "items": { "$ref": "#/$defs/ScreeningHitRow" } } } }
+    },
+    {
+      "if":   { "properties": { "chain_name": { "const": "compliance_events" } } },
+      "then": { "properties": { "rows": { "items": { "$ref": "#/$defs/ComplianceEventRow" } } } }
+    },
+    {
+      "if":   { "properties": { "chain_name": { "const": "negotiation_trace_events" } } },
+      "then": { "properties": { "rows": { "items": { "$ref": "#/$defs/NegotiationTraceRow" } } } }
+    }
+  ],
+
+  "$defs": {
+    "Sha256Hex": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Lowercase hex SHA-256 digest, exactly 64 characters."
+    },
+
+    "Uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+
+    "BridgingRow": {
+      "type": "object",
+      "required": ["chain_position", "content_hash", "prev_hash"],
+      "additionalProperties": false,
+      "properties": {
+        "chain_position": { "type": "integer", "minimum": 1 },
+        "content_hash":   { "$ref": "#/$defs/Sha256Hex" },
+        "prev_hash":      { "$ref": "#/$defs/Sha256Hex" }
+      }
+    },
+
+    "SelectedRow": {
+      "type": "object",
+      "required": ["chain_position", "content_hash", "prev_hash"],
+      "properties": {
+        "chain_position": { "type": "integer", "minimum": 1 },
+        "content_hash":   { "$ref": "#/$defs/Sha256Hex" },
+        "prev_hash":      { "$ref": "#/$defs/Sha256Hex" }
+      },
+      "description": "Base shape — per-chain canonical fields are added by the chain-specific row defs below."
+    },
+
+    "AuditLogRow": {
+      "type": "object",
+      "required": [
+        "id", "content_hash", "trace_id", "actor", "action", "target_type",
+        "target_id", "tenant_id", "before_state", "after_state", "ip_address",
+        "user_agent", "created_at", "chain_position", "prev_hash"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id":             { "type": "integer" },
+        "content_hash":   { "$ref": "#/$defs/Sha256Hex" },
+        "trace_id":       { "$ref": "#/$defs/Uuid" },
+        "actor":          { "type": "string" },
+        "action":         { "type": "string" },
+        "target_type":    { "type": "string" },
+        "target_id":      { "type": "string" },
+        "tenant_id":      { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Uuid" }] },
+        "before_state":   { "oneOf": [{ "type": "null" }, { "type": "object" }] },
+        "after_state":    { "oneOf": [{ "type": "null" }, { "type": "object" }] },
+        "ip_address":     { "type": ["string", "null"] },
+        "user_agent":     { "type": ["string", "null"] },
+        "created_at":     { "type": "string", "format": "date-time" },
+        "chain_position": { "type": "integer", "minimum": 1 },
+        "prev_hash":      { "$ref": "#/$defs/Sha256Hex" }
+      }
+    },
+
+    "ScreeningHitRow": {
+      "type": "object",
+      "required": [
+        "id", "content_hash", "screened_at", "subject_type", "wallet_address",
+        "tenant_id", "payment_ledger_id", "sanctions_entry_id", "action_taken",
+        "screening_context", "chain_position", "prev_hash"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id":                 { "type": "integer" },
+        "content_hash":       { "$ref": "#/$defs/Sha256Hex" },
+        "screened_at":        { "type": "string", "format": "date-time" },
+        "subject_type":       { "type": "string", "enum": ["payer", "tenant"] },
+        "wallet_address":     { "type": "string" },
+        "tenant_id":          { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Uuid" }] },
+        "payment_ledger_id":  { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Uuid" }] },
+        "sanctions_entry_id": { "type": "integer" },
+        "action_taken":       { "type": "string", "enum": ["blocked", "flagged", "escalated"] },
+        "screening_context":  { "type": "string", "enum": ["realtime", "background"] },
+        "chain_position":     { "type": "integer", "minimum": 1 },
+        "prev_hash":          { "$ref": "#/$defs/Sha256Hex" }
+      }
+    },
+
+    "ComplianceEventRow": {
+      "type": "object",
+      "required": [
+        "id", "content_hash", "tenant_id", "rule_id", "payment_ledger_id",
+        "payer_address_snapshot", "review_of_event_id", "event_type",
+        "metric_value", "threshold_value", "created_at", "chain_position",
+        "prev_hash"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id":                     { "$ref": "#/$defs/Uuid" },
+        "content_hash":           { "$ref": "#/$defs/Sha256Hex" },
+        "tenant_id":              { "$ref": "#/$defs/Uuid" },
+        "rule_id":                { "$ref": "#/$defs/Uuid" },
+        "payment_ledger_id":      { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Uuid" }] },
+        "payer_address_snapshot": { "type": ["string", "null"] },
+        "review_of_event_id":     { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Uuid" }] },
+        "event_type":             { "type": "string", "enum": ["alert", "block", "escalate", "auto_cleared"] },
+        "metric_value":           { "type": "string", "description": "Numeric (Decimal) rendered as string for stable canonical form." },
+        "threshold_value":        { "type": "string", "description": "Numeric (Decimal) rendered as string for stable canonical form." },
+        "created_at":             { "type": "string", "format": "date-time" },
+        "chain_position":         { "type": "integer", "minimum": 1 },
+        "prev_hash":              { "$ref": "#/$defs/Sha256Hex" }
+      }
+    },
+
+    "NegotiationTraceRow": {
+      "type": "object",
+      "required": [
+        "id", "content_hash", "trace_id", "session_id", "tenant_id",
+        "counterparty_a", "counterparty_b", "protocol", "message_seq",
+        "message_role", "message_payload", "payment_ledger_id", "created_at",
+        "chain_position", "prev_hash"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id":                { "$ref": "#/$defs/Uuid" },
+        "content_hash":      { "$ref": "#/$defs/Sha256Hex" },
+        "trace_id":          { "$ref": "#/$defs/Uuid" },
+        "session_id":        { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Uuid" }] },
+        "tenant_id":         { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Uuid" }] },
+        "counterparty_a":    { "type": "string" },
+        "counterparty_b":    { "type": "string" },
+        "protocol":          { "type": "string", "enum": ["x402", "mpp", "ap2", "a2a"] },
+        "message_seq":       { "type": "integer", "minimum": 1 },
+        "message_role":      { "type": "string", "enum": ["offer", "counter", "accept", "reject", "abort", "settle"] },
+        "message_payload":   { "type": "object" },
+        "payment_ledger_id": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/Uuid" }] },
+        "created_at":        { "type": "string", "format": "date-time" },
+        "chain_position":    { "type": "integer", "minimum": 1 },
+        "prev_hash":         { "$ref": "#/$defs/Sha256Hex" }
+      }
+    },
+
+    "OffVmAnchor": {
+      "type": "object",
+      "required": [
+        "chain_name", "last_shipped_position", "shipped_at", "bucket_name",
+        "object_key", "object_etag", "object_lock_until", "shipper_version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "chain_name":            { "type": "string" },
+        "last_shipped_position": { "type": "integer", "minimum": 1 },
+        "shipped_at":            { "type": ["string", "null"], "format": "date-time" },
+        "bucket_name":           { "type": "string" },
+        "object_key": {
+          "type": "string",
+          "pattern": "^[a-z_]+/[0-9]{9}-[0-9]{9}-[0-9a-f]{16}\\.ndjson$",
+          "description": "Bucket-relative key. Format: '{chain_name}/{from:09d}-{to:09d}-{sha256[:16]}.ndjson'. The first 16 hex chars MUST equal SHA-256(manifest_bytes)[:16] — this is what the verifier confirms in the off_vm_anchor check."
+        },
+        "object_etag":           { "type": ["string", "null"] },
+        "object_lock_until":     { "type": ["string", "null"], "format": "date-time" },
+        "shipper_version":       { "type": "string" }
+      }
+    },
+
+    "BundleSignature": {
+      "type": "object",
+      "required": ["algorithm", "canonicalisation", "key_id", "hex"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["HMAC-SHA256"],
+          "description": "Verifiers MUST reject unknown algorithms."
+        },
+        "canonicalisation": {
+          "type": "string",
+          "enum": ["RFC 8785"],
+          "description": "JSON canonicalisation scheme used to compute the signed payload. Verifiers MUST reject unknown values."
+        },
+        "key_id": {
+          "type": "string",
+          "description": "Tag identifying which signing key was used. Auditors validate against the published key for this id."
+        },
+        "hex": { "$ref": "#/$defs/Sha256Hex" }
+      }
+    }
+  }
+}

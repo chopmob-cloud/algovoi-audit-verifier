@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Demo output
+demo_bundle*.json
+manifest_*.ndjson
+
+# OS
+.DS_Store
+Thumbs.db
