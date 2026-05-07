@@ -1,0 +1,90 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    name: pytest (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install rfc8785 jsonschema pytest
+
+      - name: Run test suite
+        run: pytest tests/ -v
+
+  smoke:
+    name: end-to-end demo + verify smoke (py3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install rfc8785
+
+      - name: Generate + verify demo bundles for every chain
+        run: |
+          set -euo pipefail
+          for chain in audit_log screening_hits compliance_events negotiation_trace_events; do
+            echo "::group::$chain"
+            python demo_audit_bundle.py "demo_${chain}.json" --chain "$chain"
+            python verify_audit_bundle.py "demo_${chain}.json" \
+              --signing-key 'demo-key-not-for-production-use' | tee /tmp/verifier_out.txt
+            grep -q "Verdict: PASS" /tmp/verifier_out.txt
+            echo "::endgroup::"
+          done
+
+  schema-validate:
+    name: JSON Schema validates every demo (py3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install rfc8785 jsonschema
+
+      - name: Validate demo output for every chain
+        run: |
+          python - <<'PY'
+          import json, sys, jsonschema
+          sys.path.insert(0, '.')
+          import demo_audit_bundle as d
+
+          schema = json.load(open('audit-bundle.schema.json'))
+          for chain in ('audit_log', 'screening_hits', 'compliance_events', 'negotiation_trace_events'):
+              bundle = d.build_demo_bundle(chain_name=chain)
+              jsonschema.validate(instance=bundle, schema=schema)
+              print(f'{chain}: VALID')
+          PY
