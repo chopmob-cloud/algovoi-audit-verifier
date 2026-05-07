@@ -1,5 +1,9 @@
 # algovoi-audit-verifier
 
+[![test](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml/badge.svg)](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml)
+
 Standalone reference verifier for AlgoVoi selective-disclosure audit bundles. Designed to run on an external auditor's machine without trusting AlgoVoi's infrastructure, transport, or any single attestation surface.
 
 > **For AlgoVoi internal teams:** the canonical source for the verifier lives in the private `AlgoVoi-Hand` monorepo at `scripts/verify_audit_bundle.py`. This public repo is the auditor-facing distribution copy.
