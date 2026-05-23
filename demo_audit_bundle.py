@@ -231,9 +231,8 @@ def build_demo_bundle(
         },
         "off_vm_anchor": None,    # nothing has been "shipped" in this demo
         "verification_instructions": (
-            f"Demo bundle for chain '{chain_name}'. Run "
-            f"scripts/verify_audit_bundle.py against this file with "
-            f"--signing-key '{signing_key}' to verify."
+            f"Demo bundle for chain '{chain_name}'. Run the AlgoVoi audit "
+            f"verifier against this file with --signing-key '{signing_key}' to verify."
         ),
     }
 
