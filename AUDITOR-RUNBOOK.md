@@ -362,7 +362,7 @@ Any FAIL warrants formal escalation to AlgoVoi's compliance officer and possibly
 - The bundle envelope JSON Schema (this repo): [`audit-bundle.schema.json`](audit-bundle.schema.json)
 - The compliance attestation surface (public, advertises the available chains, current signing key id, and the verification recipe): [`https://api.algovoi.co.uk/compliance/attestation`](https://api.algovoi.co.uk/compliance/attestation) — the `audit_chain.selective_disclosure_bundles` block.
 
-The verifier mirrors several server-side helpers from AlgoVoi's private monorepo by hand (canonical-fields layouts at `shared/utils/audit_chain.py`, NDJSON shipper format at `audit_chain_shipper.py`, HMAC signing at `control_plane/app/services/audit.py::_sign_bundle`). The helper names are listed here for diligence purposes. **You do not need access to AlgoVoi's private code** — the verifier is fully self-contained and exercised end-to-end by the test suite in this repo (`pytest tests/`).
+The verifier reproduces the bundle-emission logic from the server side by hand: canonical-fields layouts per chain, the NDJSON shipper format, and the HMAC signing scheme over the JCS-canonical bundle bytes. **You do not need access to the AlgoVoi private code** — the verifier is fully self-contained and exercised end-to-end by the test suite in this repo (`pytest tests/`). The canonicalisation and hash-chain primitives the bundles compose against are themselves published as the open-source `algovoi-substrate` package (PyPI / npm) for independent cross-checking.
 
 ---
 

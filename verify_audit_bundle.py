@@ -7,7 +7,7 @@ AlgoVoi codebase. Only stdlib + the `rfc8785` PyPI package (which is
 listed as a dependency in the bundle's `verification_instructions`).
 
 What this verifies (mirroring the recipe in
-gateway/app/routers/compliance_gate.py::selective_disclosure_bundles):
+the gateway-side selective-disclosure bundle emission logic):
 
   1. Per-row content_hash — SHA-256 over the RFC 8785 canonical JSON of
      each row's canonical-fields payload, confirmed against the stored
@@ -61,8 +61,8 @@ from typing import Any
 # chains each commit a different set of fields to their content_hash. The
 # functions below MUST match what the gateway computes at insert time —
 # any drift here will cause every row to fail verification on the auditor
-# side. See shared/utils/audit_chain.py for the source of truth on the
-# server.
+# side. The reference canonicalisation is RFC 8785 JCS; the per-chain
+# canonical-fields layouts are documented in audit-bundle.schema.json.
 # ---------------------------------------------------------------------------
 
 
@@ -142,9 +142,9 @@ _FIELD_EXTRACTORS = {
 }
 
 
-# Bundle envelope versions this verifier knows how to interpret. Bumping
-# the gateway's CHAIN_FORMAT_VERSION (control_plane/app/services/audit.py)
-# means a breaking change to either the bundle envelope or the per-chain
+# Bundle envelope versions this verifier knows how to interpret. A bump
+# of the emitter's chain_format_version on the server side means a
+# breaking change to either the bundle envelope or the per-chain
 # canonical-fields layout — verifiers built against an older version
 # CANNOT correctly verify a newer bundle, so we fail fatally rather than
 # return false-PASS. Auditors should pull a fresh verifier.
@@ -434,7 +434,7 @@ def check_bundle_signature(
 def _parse_object_key_sha_prefix(object_key: str) -> str | None:
     """Extract the 16-hex-char sha256 prefix encoded in the object_key.
 
-    Format (per shared/utils/audit_chain_shipper.py::build_object_key):
+    Object-key format used by the NDJSON shipper:
       '{chain_name}/{from:09d}-{to:09d}-{sha256[:16]}.ndjson'
     e.g. 'audit_log/000000001-000000100-abc123def456ab78.ndjson'
     """
@@ -466,8 +466,8 @@ def check_off_vm_anchor(
          off_vm_anchor.object_key (or just its basename — both supported).
       2. Computes the full SHA-256 of the file bytes.
       3. Confirms the first 16 hex chars match the sha256 prefix encoded
-         in object_key (this is what the gateway hashed at ship time and
-         encoded into the object_key per audit_chain_shipper.build_object_key).
+         in object_key (this is what the shipper hashed at ship time and
+         encoded into the object_key).
       4. Parses the LAST NDJSON line and confirms its `chain_position` +
          `content_hash` match `bundle.chain_anchor.current_head`.
 

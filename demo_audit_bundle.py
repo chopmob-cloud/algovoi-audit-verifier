@@ -52,7 +52,7 @@ def _canonicalise(payload: dict[str, Any]) -> bytes:
 
 def _audit_log_row(*, chain_position: int, prev_hash: str) -> dict[str, Any]:
     """Build one audit_log row. Field set mirrors
-    shared/utils/audit_chain.py::audit_log_canonical_fields."""
+    audit_log_canonical_fields."""
     canonical = {
         "trace_id":       f"00000000-0000-0000-0000-{chain_position:012d}",
         "actor":          "demo-admin@example.com",
@@ -74,7 +74,7 @@ def _audit_log_row(*, chain_position: int, prev_hash: str) -> dict[str, Any]:
 
 def _screening_hit_row(*, chain_position: int, prev_hash: str) -> dict[str, Any]:
     """Build one screening_hits row. Field set mirrors
-    shared/utils/audit_chain.py::screening_hit_canonical_fields."""
+    screening_hit_canonical_fields."""
     canonical = {
         "screened_at":        f"2026-05-06T20:00:{chain_position:02d}+00:00",
         "subject_type":       "payer",
@@ -93,7 +93,7 @@ def _screening_hit_row(*, chain_position: int, prev_hash: str) -> dict[str, Any]
 
 def _compliance_event_row(*, chain_position: int, prev_hash: str) -> dict[str, Any]:
     """Build one compliance_events row. Field set mirrors
-    shared/utils/audit_chain.py::compliance_event_payload_for_hash. Note:
+    compliance_event_payload_for_hash. Note:
     `id` IS in the hash payload for this chain (UUID generated app-side
     pre-INSERT, unlike the BIGSERIAL ids of the other chains)."""
     fixed_uuid = f"11111111-1111-1111-1111-{chain_position:012d}"
@@ -122,7 +122,7 @@ def _compliance_event_row(*, chain_position: int, prev_hash: str) -> dict[str, A
 
 def _negotiation_trace_row(*, chain_position: int, prev_hash: str) -> dict[str, Any]:
     """Build one negotiation_trace_events row. Field set mirrors
-    shared/utils/audit_chain.py::negotiation_trace_canonical_fields."""
+    negotiation_trace_canonical_fields."""
     canonical = {
         "trace_id":          "44444444-4444-4444-4444-444444444444",
         "session_id":        None,
