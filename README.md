@@ -30,14 +30,22 @@ OpenAPI docs at [`verify.algovoi.co.uk/docs`](https://verify.algovoi.co.uk/docs)
 ### 2. Offline (auditor's machine, no network round-trip)
 
 ```bash
-pip install rfc8785
+pip install algovoi-audit-verifier
 
 # Generate a synthetic signed bundle (no real bundle needed)
-python demo_audit_bundle.py
+algovoi-verify-demo > demo_bundle.json   # or: python demo_audit_bundle.py
 
 # Verify it
-python verify_audit_bundle.py demo_bundle.json \
+algovoi-verify demo_bundle.json \
     --signing-key 'demo-key-not-for-production-use'
+```
+
+Or run the HTTP server locally (same code path as `verify.algovoi.co.uk`):
+
+```bash
+pip install 'algovoi-audit-verifier[server]'
+algovoi-verify-server
+# POST bundles to http://localhost:8000/verify
 ```
 
 Expected output ends with `Verdict: PASS`. If you don't see that, your `rfc8785` install is wrong or you're on Python < 3.10 — fix that before trusting any verdict on a real bundle from AlgoVoi.
