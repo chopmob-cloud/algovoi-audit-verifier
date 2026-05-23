@@ -6,11 +6,28 @@
 
 Standalone reference verifier for AlgoVoi selective-disclosure audit bundles. Designed to run on an external auditor's machine without trusting AlgoVoi's infrastructure, transport, or any single attestation surface.
 
-> **For AlgoVoi internal teams:** the canonical source for the verifier lives in the private `AlgoVoi-Hand` monorepo at `scripts/verify_audit_bundle.py`. This public repo is the auditor-facing distribution copy.
-
 ---
 
-## Quickstart (30 seconds)
+## Two ways to verify
+
+### 1. Hosted endpoint (zero install)
+
+Live at [`verify.algovoi.co.uk`](https://verify.algovoi.co.uk). POST your bundle, get back a structured verification report. Stateless, no bundle is retained.
+
+```bash
+curl -X POST -H 'Content-Type: application/json' \
+    --data-binary @your-bundle.json \
+    https://verify.algovoi.co.uk/verify
+```
+
+Optional signature verification: pass the shared signing key in the `X-Audit-Bundle-Key` header.
+
+Response is JSON with `all_passed: bool`, `fatal: [...]`, and a `checks: [...]` array.
+HTTP 200 = all checks passed or optional-skipped; 422 = one or more checks failed; 400/413 = malformed or too-large request.
+
+OpenAPI docs at [`verify.algovoi.co.uk/docs`](https://verify.algovoi.co.uk/docs).
+
+### 2. Offline (auditor's machine, no network round-trip)
 
 ```bash
 pip install rfc8785
