@@ -1,0 +1,17 @@
+services:
+  algovoi-verify:
+    image: algovoi-verify:latest
+    container_name: algovoi-verify-1
+    restart: unless-stopped
+    # Bind to localhost only; nginx on the host proxies to it.
+    ports:
+      - "127.0.0.1:8000:8000"
+    # No bind mounts; the verifier is stateless.
+    # No environment variables for secrets; signing keys are accepted per-
+    # request via the X-Audit-Bundle-Key header.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
