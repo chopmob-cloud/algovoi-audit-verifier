@@ -93,9 +93,11 @@ TypeScript (and vice versa).
 
 ## Substrate
 
-This verifier composes against the AlgoVoi canonicalisation substrate:
+This verifier composes against the AlgoVoi-authored canonicalisation substrate:
 
-- Spec: `specs/canonicalisation.md` ([PR #2436](https://github.com/x402-foundation/x402/pull/2436)) — three-voice coalition co-signed
+- Spec: [docs.algovoi.co.uk/canonicalisation-substrate](https://docs.algovoi.co.uk/canonicalisation-substrate) (v1) and [docs.algovoi.co.uk/canonicalisation-substrate-v2](https://docs.algovoi.co.uk/canonicalisation-substrate-v2) (v2, PQC-aware)
+- IETF I-D: [`draft-hopley-x402-canonicalisation-jcs-v1`](https://datatracker.ietf.org/doc/draft-hopley-x402-canonicalisation-jcs-v1/) (Independent Submission, Informational, sole AlgoVoi authorship)
+- Upstream spec PR: [x402#2453](https://github.com/x402-foundation/x402/pull/2453) (replaces closed #2436)
 - Pin: `urn:x402:canonicalisation:jcs-rfc8785-v1`
 - Substrate SDK: [`@algovoi/substrate`](https://www.npmjs.com/package/@algovoi/substrate)
 - 53-vector conformance corpus: [`chopmob-cloud/algovoi-jcs-conformance-vectors`](https://github.com/chopmob-cloud/algovoi-jcs-conformance-vectors)
@@ -103,6 +105,14 @@ This verifier composes against the AlgoVoi canonicalisation substrate:
 ## Hosted equivalent
 
 The same code path runs at <https://verify.algovoi.co.uk> behind nginx + Cloudflare on a dedicated VM. POST any audit bundle to `/verify` and get back the same `CheckReportJSON` shape this package returns programmatically.
+
+## Conformance to the canonicalisation discipline
+
+This verifier consumes receipts pinned to `canon_version: jcs-rfc8785-v1` (or `jcs-rfc8785-v2` under the strictly-additive PQC-aware discipline). The pin selects which canonicalisation rule the verifier applies at receipt-bytes verification time. A receipt without a recognised `canon_version` pin is treated as opaque; the verifier fails closed rather than guessing the rule.
+
+## Substrate adopters
+
+AlgoVoi is recorded in the [Substrate Adopters Registry](https://docs.algovoi.co.uk/adopters) as the substrate author. Parties anchoring their own services or specifications to `canon_version: jcs-rfc8785-v1` (or v2) are recorded in the registry via the [submission process](https://docs.algovoi.co.uk/adopters#how-to-submit-an-adoption-entry). AlgoVoi validates submissions against the artefact's canonical bytes and adds qualifying entries.
 
 ## Licence
 

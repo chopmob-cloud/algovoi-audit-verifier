@@ -1,6 +1,6 @@
 {
   "name": "@algovoi/audit-verifier",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Standalone reference verifier for AlgoVoi selective-disclosure audit bundles. TypeScript port; byte-for-byte parity with the Python algovoi-audit-verifier.",
   "keywords": [
     "algovoi",
