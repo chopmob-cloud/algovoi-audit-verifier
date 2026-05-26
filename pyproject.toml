@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "algovoi-audit-verifier"
-version = "0.1.0"
+version = "0.1.1"
 description = "Standalone offline verifier for AlgoVoi selective-disclosure audit bundles. Auditor-runnable, no AlgoVoi infrastructure trust required."
 readme = "README.md"
 requires-python = ">=3.10"
