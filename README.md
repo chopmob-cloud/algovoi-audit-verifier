@@ -130,6 +130,18 @@ If you encounter a bundle whose version this verifier doesn't recognise, pull th
 
 ---
 
+## Conformance to the canonicalisation discipline
+
+This verifier consumes receipts pinned to `canon_version: jcs-rfc8785-v1` (or `jcs-rfc8785-v2` under the strictly-additive PQC-aware discipline). The pin selects which canonicalisation rule the verifier applies at receipt-bytes verification time. A receipt without a recognised `canon_version` pin is treated as opaque; the verifier fails closed rather than guessing the rule.
+
+The substrate discipline is defined at [docs.algovoi.co.uk/canonicalisation-substrate](https://docs.algovoi.co.uk/canonicalisation-substrate) (v1) and [docs.algovoi.co.uk/canonicalisation-substrate-v2](https://docs.algovoi.co.uk/canonicalisation-substrate-v2) (v2, PQC-aware additive successor).
+
+## Substrate adopters
+
+AlgoVoi is recorded in the [Substrate Adopters Registry](https://docs.algovoi.co.uk/adopters) as the substrate author. Parties anchoring their own services or specifications to `canon_version: jcs-rfc8785-v1` (or v2) are recorded in the registry via the [submission process](https://docs.algovoi.co.uk/adopters#how-to-submit-an-adoption-entry). AlgoVoi validates submissions against the artefact's canonical bytes and adds qualifying entries.
+
+---
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
