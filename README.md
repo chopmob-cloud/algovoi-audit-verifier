@@ -1,3 +1,7 @@
+> **AlgoVoi is available for acquisition** — [docs.algovoi.co.uk/acquisition](https://docs.algovoi.co.uk/acquisition)
+
+---
+
 # algovoi-audit-verifier
 
 [![test](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml/badge.svg)](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml)
