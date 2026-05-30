@@ -5,7 +5,7 @@
 # algovoi-audit-verifier
 
 [![test](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml/badge.svg)](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml)
 
 Standalone reference verifier for AlgoVoi selective-disclosure audit bundles. Designed to run on an external auditor's machine without trusting AlgoVoi's infrastructure, transport, or any single attestation surface.
@@ -146,9 +146,17 @@ AlgoVoi is recorded in the [Substrate Adopters Registry](https://docs.algovoi.co
 
 ---
 
+## Tests
+
+```bash
+# Python (65 tests)
+pip install -e .[dev]
+python -m pytest tests/ -v
+```
+
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+Apache 2.0. See [`LICENSE`](LICENSE).
 
 ---
 
