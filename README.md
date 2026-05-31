@@ -4,6 +4,8 @@
 
 # algovoi-audit-verifier
 
+[![PyPI](https://img.shields.io/pypi/v/algovoi-audit-verifier?label=PyPI)](https://pypi.org/project/algovoi-audit-verifier/)
+[![npm](https://img.shields.io/npm/v/@algovoi/audit-verifier?label=npm)](https://www.npmjs.com/package/@algovoi/audit-verifier)
 [![test](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml/badge.svg)](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/chopmob-cloud/algovoi-audit-verifier/actions/workflows/test.yml)
